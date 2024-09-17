@@ -12,7 +12,7 @@ DEFAULT_ISSUER="alwaystrustme"
 DEFAULT_PASS="changeme"
 SERVER_VALIDITY=1  # Validity in days
 CLIENT_VALIDITY=1  # Validity in days
-KEYSTORE_TYPE="JKS"
+KEYSTORE_TYPE="JKS" # Only valid values are PKCS12 and JKS
 
 # Usage function
 usage() {
@@ -21,7 +21,7 @@ usage() {
 }
 
 # Parse named parameters
-while getopts "h:p:s:c:n:k:a:" opt; do
+while getopts "h:p:s:c:n:k:i:" opt; do
     case ${opt} in
         h) HOSTNAMES=$OPTARG ;;
         p) PASS=$OPTARG ;;
@@ -72,7 +72,7 @@ for HOSTNAME in "${HOSTNAME_ARRAY[@]}"; do
     SAN_LIST+=("dns:$HOSTNAME")
   fi
 done
-SAN="${SAN_LIST[*]}"
+SAN=$(IFS=, ; echo "${SAN_LIST[*]}")
 
 # Generate server certificate
 echo "Generating server certificate with SAN=${SAN} and keystoreType=${KEYSTORE_TYPE}"
@@ -113,10 +113,10 @@ for CLIENT in "${CLIENT_ARRAY[@]}"; do
 
   openssl x509 -outform der -in "$CLIENT_CERT" -out "${CLIENT}-cert.crt"
 
-  # Import client cert into broker truststore
-  keytool -import -file "${CLIENT}-cert.crt" \
-      -alias "${CLIENT}" -keystore "broker-truststore.${EXT}" \
-      -storetype "${KEYSTORE_TYPE}" -storepass "${PASS}" -noprompt
+  # Import client cert into server truststore
+  printf "yes\n" | keytool -import -file "${CLIENT}-cert.crt" \
+      -alias "${CLIENT}" -keystore "server-truststore.${EXT}" \
+      -storetype "${KEYSTORE_TYPE}" -storepass "${PASS}"
 
   # Create client PKCS12 keystore
   openssl pkcs12 -export -in "$CLIENT_CERT" -inkey "$CLIENT_KEY" \
@@ -124,7 +124,7 @@ for CLIENT in "${CLIENT_ARRAY[@]}"; do
       -passin pass:"${PASS}" -passout pass:"${PASS}"
 
   # Add client PKCS12 keystore to the master keystore
-  keytool -importkeystore -alias "${CLIENT}" \
+  keytool -importkeystore  -alias 1 -destalias "${CLIENT}" \
       -srckeystore "${CLIENT}-keystore.p12" -srcstoretype PKCS12 \
       -srcstorepass "${PASS}" -destkeystore "clients-keystore.${EXT}" \
       -deststoretype "${KEYSTORE_TYPE}" -storepass "${PASS}" -noprompt
