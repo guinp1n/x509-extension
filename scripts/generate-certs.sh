@@ -6,124 +6,129 @@
 set -e
 
 # Default values
-defaultHostnames="localhost,example1.com,example2.com"
-defaultClients="client1,client2"
-defaultPass="changeme"
-serverValidity=1
-clientValidity=1
-keystoreType="JKS"
+DEFAULT_HOSTNAMES="localhost,example1.com,example2.com"
+DEFAULT_CLIENTS="client1,client2"
+DEFAULT_ISSUER="alwaystrustme"
+DEFAULT_PASS="changeme"
+SERVER_VALIDITY=1  # Validity in days
+CLIENT_VALIDITY=1  # Validity in days
+KEYSTORE_TYPE="JKS"
 
 # Usage function
 usage() {
-    echo "Usage: $0 [-h hostnames] [-p password] [-s serverValidity] [-c clientValidity] [-n clientNames] [-k keystoreType]"
+    echo "Usage: $0 [-h hostnames] [-p password] [-s serverValidity] [-c clientValidity] [-n clients] [-k keystoreType] [-i issuerName]"
     exit 1
 }
 
 # Parse named parameters
-while getopts "h:p:s:c:n:k:" opt; do
+while getopts "h:p:s:c:n:k:a:" opt; do
     case ${opt} in
-        h) hostnames=$OPTARG ;;
-        p) defaultPass=$OPTARG ;;
-        s) serverValidity=$OPTARG ;;
-        c) clientValidity=$OPTARG ;;
-        n) clients=$OPTARG ;;
-        k) keystoreType=$OPTARG ;;
+        h) HOSTNAMES=$OPTARG ;;
+        p) PASS=$OPTARG ;;
+        s) SERVER_VALIDITY=$OPTARG ;;
+        c) CLIENT_VALIDITY=$OPTARG ;;
+        n) CLIENTS=$OPTARG ;;
+        k) KEYSTORE_TYPE=$OPTARG ;;
+        i) ISSUER=$OPTARG ;;
         *) usage ;;
     esac
 done
 
 # Set defaults if not provided
-hostnames=${hostnames:-$defaultHostnames}
-clients=${clients:-$defaultClients}
-keystoreType=${keystoreType:-$keystoreType}
+HOSTNAMES=${HOSTNAMES:-$DEFAULT_HOSTNAMES}
+CLIENTS=${CLIENTS:-$DEFAULT_CLIENTS}
+KEYSTORE_TYPE=${KEYSTORE_TYPE:-$KEYSTORE_TYPE}
+ISSUER=${ISSUER:-$DEFAULT_ISSUER}
+PASS=${PASS:-$DEFAULT_PASS}
 
-IFS=',' read -r -a hostnamesArray <<< "$hostnames"
-IFS=',' read -r -a clientsArray <<< "$clients"
+IFS=',' read -r -a HOSTNAME_ARRAY <<< "$HOSTNAMES"
+IFS=',' read -r -a CLIENT_ARRAY <<< "$CLIENTS"
 
-declare -A keystoreMap=( ["JKS"]="jks" ["PKCS12"]="p12" )
-ext=${keystoreMap[$keystoreType]}
+declare -A KEYSTORE_EXT=( ["JKS"]="jks" ["PKCS12"]="p12" )
+EXT=${KEYSTORE_EXT[$KEYSTORE_TYPE]}
 
-time1=$(date '+%Y%m%d_%H%M%S')
-outputDirectory="certs_${keystoreType}_${time1}"
-mkdir -p "$outputDirectory"
-pushd "$outputDirectory" > /dev/null
+TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+OUTPUT_DIR="certs_${KEYSTORE_TYPE}_${TIMESTAMP}"
+mkdir -p "$OUTPUT_DIR"
+pushd "$OUTPUT_DIR" > /dev/null
 
 # Generate README file with parameters
-cat <<EOF > readme.txt
-hostnames: ${hostnames[*]}
-clients: ${clients[*]}
-defaultPass: ${defaultPass}
-serverValidity: ${serverValidity}
-clientValidity: ${clientValidity}
+cat <<EOF > README.txt
+hostnames: ${HOSTNAMES}
+clients: ${CLIENTS}
+password: ${PASS}
+serverValidity: ${SERVER_VALIDITY}
+clientValidity: ${CLIENT_VALIDITY}
 created: $(date +%Y-%m-%dT%H:%M:%S)
-keystoreType: ${keystoreType}
+keystoreType: ${KEYSTORE_TYPE}
 EOF
 
 # Prepare hostnames for SAN
-for hostname in "${hostnamesArray[@]}"; do
-  if [[ $hostname =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-    modified_hostnames+=("ip:$hostname")
+SAN_LIST=()
+for HOSTNAME in "${HOSTNAME_ARRAY[@]}"; do
+  if [[ $HOSTNAME =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    SAN_LIST+=("ip:$HOSTNAME")
   else
-    modified_hostnames+=("dns:$hostname")
+    SAN_LIST+=("dns:$HOSTNAME")
   fi
 done
-IFS=','; joinedHostnames="${modified_hostnames[*]}"; unset IFS
+SAN="${SAN_LIST[*]}"
 
-# Generate broker certificates
-echo "Generating server certificate for SAN=${joinedHostnames}, keystoreType: $keystoreType"
-keytool -genkey -keyalg RSA -alias "HiveMQ Broker Certificate" \
-    -keystore "broker-keystore.${ext}" -storetype "${keystoreType}" \
-    -storepass "${defaultPass}" -keypass "${defaultPass}" \
-    -validity "${serverValidity}" -keysize 2048 \
-    -dname "CN=HiveMQ Broker, OU=Customer Services, O=HiveMQ, L=Landshut, ST=Bavaria, C=DE" \
-    -ext "SAN=$joinedHostnames"
+# Generate server certificate
+echo "Generating server certificate with SAN=${SAN} and keystoreType=${KEYSTORE_TYPE}"
+keytool -genkey -keyalg RSA -alias "ServerCert" \
+    -keystore "server-keystore.${EXT}" -storetype "${KEYSTORE_TYPE}" \
+    -storepass "${PASS}" -keypass "${PASS}" \
+    -validity "${SERVER_VALIDITY}" -keysize 2048 \
+    -dname "CN=Server, OU=Services, O=Organization, L=City, ST=State, C=Country" \
+    -ext "SAN=${SAN}"
 
-# Export and convert broker certificates
-keytool -exportcert -alias "HiveMQ Broker Certificate" \
-    -file "broker-cert.pem" -keystore "broker-keystore.${ext}" \
-    -rfc -storepass "$defaultPass"
+# Export and convert server certificate
+keytool -exportcert -alias "ServerCert" \
+    -file "server-cert.pem" -keystore "server-keystore.${EXT}" \
+    -rfc -storepass "${PASS}"
 
-openssl x509 -outform der -in "broker-cert.pem" -out "broker-cert.crt"
+openssl x509 -outform der -in "server-cert.pem" -out "server-cert.crt"
 
-# Import broker cert into client truststore
-printf "yes\n" | keytool -import -file "broker-cert.crt" \
-    -alias "${hostname}" -keystore "client-truststore.${ext}" \
-    -storepass "${defaultPass}" -storetype "${keystoreType}"
+# Import server cert into client truststore
+keytool -import -file "server-cert.crt" \
+    -alias "server" -keystore "client-truststore.${EXT}" \
+    -storepass "${PASS}" -storetype "${KEYSTORE_TYPE}" -noprompt
 
-# Generate a CA certificate
-openssl genrsa -out alwaystrustmeCA.key 2048
-openssl req -x509 -new -nodes -key alwaystrustmeCA.key -sha256 -days 1024 \
-    -out alwaystrustmeCA.pem -subj "/CN=alwaystrustme"
+# Generate CA certificate
+openssl genrsa -out "${ISSUER}CA-key.pem" 2048
+openssl req -x509 -new -nodes -key "${ISSUER}CA-key.pem" -sha256 -days 1024 \
+    -out "${ISSUER}CA-cert.pem" -subj "/CN=${ISSUER}"
 
 # Generate client certificates
-for clientName in "${clientsArray[@]}"; do
-  clientCert="${clientName}-cert"
-  clientKey="${clientName}-key"
+for CLIENT in "${CLIENT_ARRAY[@]}"; do
+  CLIENT_KEY="${CLIENT}-key.pem"
+  CLIENT_CERT="${CLIENT}-cert.pem"
 
-  openssl genrsa -out "${clientKey}.pem" 2048
-  openssl req -new -key "${clientKey}.pem" -out "${clientCert}.csr" -subj "/CN=${clientName}"
+  openssl genrsa -out "$CLIENT_KEY" 2048
+  openssl req -new -key "$CLIENT_KEY" -out "${CLIENT}-cert.csr" -subj "/CN=${CLIENT}"
 
-  openssl x509 -req -in "${clientCert}.csr" -CA alwaystrustmeCA.pem -CAkey alwaystrustmeCA.key -CAcreateserial \
-      -out "${clientCert}.pem" -days "${clientValidity}" -sha256
+  openssl x509 -req -in "${CLIENT}-cert.csr" -CA "${ISSUER}CA-cert.pem" -CAkey "${ISSUER}CA-key.pem" -CAcreateserial \
+      -out "$CLIENT_CERT" -days "${CLIENT_VALIDITY}" -sha256
 
-  openssl x509 -outform der -in "${clientCert}.pem" -out "${clientCert}.crt"
+  openssl x509 -outform der -in "$CLIENT_CERT" -out "${CLIENT}-cert.crt"
 
   # Import client cert into broker truststore
-  printf "yes\n" | keytool -import -file "${clientCert}.crt" \
-      -alias "${clientName}" -keystore "broker-truststore.${ext}" \
-      -storetype "${keystoreType}" -storepass "${defaultPass}"
+  keytool -import -file "${CLIENT}-cert.crt" \
+      -alias "${CLIENT}" -keystore "broker-truststore.${EXT}" \
+      -storetype "${KEYSTORE_TYPE}" -storepass "${PASS}" -noprompt
 
   # Create client PKCS12 keystore
-  openssl pkcs12 -export -in "${clientCert}.pem" -inkey "${clientKey}.pem" \
-      -certfile "${clientCert}.pem" -out "${clientName}-keystore.p12" \
-      -passin pass:"${defaultPass}" -passout pass:"${defaultPass}"
+  openssl pkcs12 -export -in "$CLIENT_CERT" -inkey "$CLIENT_KEY" \
+      -certfile "$CLIENT_CERT" -out "${CLIENT}-keystore.p12" \
+      -passin pass:"${PASS}" -passout pass:"${PASS}"
 
   # Add client PKCS12 keystore to the master keystore
-  keytool -importkeystore -alias 1 -destalias "${clientName}" \
-      -srckeystore "${clientName}-keystore.p12" -srcstoretype PKCS12 \
-      -srcstorepass "${defaultPass}" -destkeystore "clients-keystore.${ext}" \
-      -deststoretype "${keystoreType}" -storepass "${defaultPass}" -noprompt
+  keytool -importkeystore -alias "${CLIENT}" \
+      -srckeystore "${CLIENT}-keystore.p12" -srcstoretype PKCS12 \
+      -srcstorepass "${PASS}" -destkeystore "clients-keystore.${EXT}" \
+      -deststoretype "${KEYSTORE_TYPE}" -storepass "${PASS}" -noprompt
 done
 
 popd > /dev/null
-echo "Certificates saved to: $(pwd)/$outputDirectory"
+echo "Certificates saved to: $(pwd)/$OUTPUT_DIR"

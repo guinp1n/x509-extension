@@ -6,7 +6,7 @@ This Bash script automates the generation of SSL certificates for a server and m
 - A client truststore containing the server certificate
 - A CA certificate
 - Client certificates signed by the CA
-- Client keystores in PKCS12 format
+- Client keystores
 
 The script also outputs a `readme.txt` with the key parameters used during execution.
 
@@ -30,6 +30,19 @@ The script also outputs a `readme.txt` with the key parameters used during execu
 - `-c` Validity period (in days) for client certificates. Defaults to `1` day.
 - `-n` Client names (comma-separated list). Defaults to `client1,client2`.
 - `-k` Keystore type (JKS or PKCS12). Defaults to `JKS`.
+
+
+
+### Output
+The generated certificates and keystores are saved in a directory named `certs_{keystoreType}_{timestamp}`.
+The directory contains:
+* Server keystore
+* Server certificate in PEM and CRT formats
+* Client keystores and truststore
+* CA certificate
+* A readme.txt file summarizing the parameters used.
+
+
 
 ## Examples
 
@@ -56,12 +69,10 @@ The script also outputs a `readme.txt` with the key parameters used during execu
 ./generate-certs.sh -n "client1,client2,client3,client4,client5,client6"
 ```
 
-### Output
-The generated certificates and keystores are saved in a directory named `certs_{keystoreType}_{timestamp}`.
-The directory contains:
-* Server keystore
-* Server certificate in PEM and CRT formats
-* Client keystores and truststore
-* CA certificate
-* A readme.txt file summarizing the parameters used.
+
+
+
+## License
+
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for more details.
 
