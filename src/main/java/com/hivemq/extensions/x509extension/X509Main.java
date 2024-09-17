@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.extensions.helloworld;
+package com.hivemq.extensions.x509extension;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.parameter.*;
 import com.hivemq.extension.sdk.api.services.Services;
-import com.hivemq.extension.sdk.api.services.intializer.InitializerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +30,10 @@ import org.slf4j.LoggerFactory;
  * @author Florian Limpöck
  * @since 4.0.0
  */
-public class HelloWorldMain implements ExtensionMain {
+public class X509Main implements ExtensionMain {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(HelloWorldMain.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(X509Main.class);
+    private static final @NotNull X509Authenticator X_509_AUTHENTICATOR = new X509Authenticator();
 
     @Override
     public void extensionStart(
@@ -42,8 +41,7 @@ public class HelloWorldMain implements ExtensionMain {
             final @NotNull ExtensionStartOutput extensionStartOutput) {
 
         try {
-            addClientLifecycleEventListener();
-            addPublishModifier();
+            Services.securityRegistry().setAuthenticatorProvider(authenticatorProviderInput -> X_509_AUTHENTICATOR);
 
             final ExtensionInformation extensionInformation = extensionStartInput.getExtensionInformation();
             log.info("Started " + extensionInformation.getName() + ":" + extensionInformation.getVersion());
@@ -62,20 +60,5 @@ public class HelloWorldMain implements ExtensionMain {
         log.info("Stopped " + extensionInformation.getName() + ":" + extensionInformation.getVersion());
     }
 
-    private void addClientLifecycleEventListener() {
-        final EventRegistry eventRegistry = Services.eventRegistry();
 
-        final HelloWorldListener helloWorldListener = new HelloWorldListener();
-
-        eventRegistry.setClientLifecycleEventListener(input -> helloWorldListener);
-    }
-
-    private void addPublishModifier() {
-        final InitializerRegistry initializerRegistry = Services.initializerRegistry();
-
-        final HelloWorldInterceptor helloWorldInterceptor = new HelloWorldInterceptor();
-
-        initializerRegistry.setClientInitializer(
-                (initializerInput, clientContext) -> clientContext.addPublishInboundInterceptor(helloWorldInterceptor));
-    }
 }
