@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.hivemq.extensions"
-description = "HiveMQ 4 Hello x509 Extension - a simple reference for all extension developers"
+description = "HiveMQ 4 Hello x509 Extension - a simple security extension example for all extension developers"
 dependencies {
     implementation("org.jetbrains:annotations:24.0.0")
 }

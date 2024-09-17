@@ -23,6 +23,7 @@ import com.hivemq.extension.sdk.api.client.parameter.ClientTlsInformation;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.security.cert.X509Certificate;
 
 
@@ -39,7 +40,7 @@ public class X509Authenticator implements SimpleAuthenticator {
             log.info("Issuer was alwaystrustme, client is allowed to use all topics with all permissions");
             output.authenticateSuccessfully();
         } else {
-            log.info("Issuer is: " + certificate.getIssuerDN().getName());
+            log.info("Issuer was: " + certificate.getIssuerDN().getName());
         }
 
         output.nextExtensionOrDefault();

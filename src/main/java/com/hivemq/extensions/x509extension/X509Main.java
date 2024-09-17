@@ -22,14 +22,7 @@ import com.hivemq.extension.sdk.api.services.Services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * This is the main class of the extension,
- * which is instantiated either during the HiveMQ start up process (if extension is enabled)
- * or when HiveMQ is already started by enabling the extension.
- *
- * @author Florian Limpöck
- * @since 4.0.0
- */
+
 public class X509Main implements ExtensionMain {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(X509Main.class);
