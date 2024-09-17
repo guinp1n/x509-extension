@@ -1,27 +1,28 @@
 
 
-= HiveMQ 4 – Example x509 Auth Extension
+= HiveMQ 4 – Example x509 Authentication Extension
 
 == Purpose
 
-This HiveMQ extension authenticates MQTT clients using x509 certificates. The extension checks the **Issuer** of the provided client certificate:
+This HiveMQ extension authenticates MQTT clients using x509 certificates. The extension evaluates the Issuer of the provided client certificate:
 
-- If the **Issuer** is `alwaystrustme`, the client is fully authorized and can access all topics with all permissions.
-- If the **Issuer** is anything else, the x509-extension does not authorize the client and forwards the authentication flow to the next or default authenticator.
+* If the Issuer is `alwaystrustme`, the client is fully authorized to access all topics with all permissions.
+* If the Issuer differs, the extension does not authorize the client and passes the authentication process to the next available authenticator.
 
 
 == Installation
 
-=== Download the release .zip file
+Download the release package:
 ```bash
 wget https://github.com/guinp1n/x509-extension/releases/download/initial/x509-extension-4.32.0.zip
 ```
 
-=== Unzip the downloaded file to the extensions directory
+Extract the contents into the HiveMQ extensions directory:
 ```bash
 unzip -o x509-extension-4.32.0.zip -d $HIVEMQ_HOME/extensions
 ```
-The result directory should look like:
+
+Verify the directory structure:
 ```text
 $HIVEMQ_HOME/extensions/x509-extension
 ├── LICENSE
@@ -29,24 +30,31 @@ $HIVEMQ_HOME/extensions/x509-extension
 └── x509-extension-4.32.0.jar
 ```
 
-== How to Build from code
+Start HiveMQ.
 
-. Clone this repository. It will result in a Java 11 Gradle project.
+== Building from Source
+
+Clone the repository:
+
 ```bash
 git clone https://github.com/guinp1n/x509-extension
 cd x509-extension
 ```
 
-. Execute the Gradle task `hivemqExtensionZip` to build the extension.
+Build the extension using Gradle:
 ```bash
 ./gradlew clean hivemqExtensionZip
 ```
-. Move the file: `build/hivemq-extension/x509-extension-4.32.0.zip` to the directory: `HIVEMQ_HOME/extensions`
-. Unzip the file.
-. Start HiveMQ.
+
+Extract the built extension to the HiveMQ extensions directory:
+
+```bash
+unzip -o build/hivemq-extension/x509-extension-4.32.0.zip -d $HIVEMQ_HOME/extensions
+```
+
+Start HiveMQ.
 
 
 == License
 
-HiveMQ Hello x509 Extension is licensed under the `APACHE LICENSE, VERSION 2.0`.
-A copy of the license can be found link:LICENSE[here].
+The HiveMQ x509 Authentication Extension is licensed under the link:LICENSE[Apache License, Version 2.0]. 🐝
