@@ -29,7 +29,7 @@ The script also outputs a `readme.txt` with the key parameters used during execu
 - `-s` Validity period (in days) for the server certificate. Defaults to `1` day.
 - `-c` Validity period (in days) for client certificates. Defaults to `1` day.
 - `-n` Client names (comma-separated list). Defaults to `client1,client2`.
-- `-k` Keystore type (JKS or PKCS12). Defaults to `JKS`.
+- `-k` Keystore type (`JKS` or `PKCS12`). Defaults to `JKS`.
 
 
 
