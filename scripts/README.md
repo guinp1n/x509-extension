@@ -38,13 +38,23 @@ The script also outputs a `readme.txt` with the key parameters used during execu
 ```
 
 ```bash
+./generate-certs.sh -k "JKS" -p "newpassword"
+```
+
+```bash
 ./generate-certs.sh -k "PKCS12" -s 365 -c 365
+```
+```bash
+./generate-certs.sh -s 730 -c 90
 ```
 
 ```bash
 ./generate-certs.sh -h "mydomain.com,sub.mydomain.com" -n "clientA,clientB" -p "strongpassword"
 ```
 
+```bash
+./generate-certs.sh -n "client1,client2,client3,client4,client5,client6"
+```
 
 ### Output
 The generated certificates and keystores are saved in a directory named `certs_{keystoreType}_{timestamp}`.
