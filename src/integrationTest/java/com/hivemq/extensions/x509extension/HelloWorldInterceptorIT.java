@@ -47,13 +47,13 @@ class HelloWorldInterceptorIT {
 
     @Container
     final @NotNull HiveMQContainer extension = new HiveMQContainer(DockerImageName.parse("hivemq/hivemq-ce").withTag("latest"))
-            .withExtension(MountableFile.forClasspathResource("hivemq-hello-world-extension"));
+            .withExtension(MountableFile.forClasspathResource("x509-extension"));
 
     @Test
     @Timeout(value = 5, unit = TimeUnit.MINUTES)
     void test_payload_modified() throws InterruptedException {
         final Mqtt5BlockingClient client = Mqtt5Client.builder()
-                .identifier("hello-world-client")
+                .identifier("hello-x509-client")
                 .serverPort(extension.getMqttPort())
                 .buildBlocking();
         client.connect();

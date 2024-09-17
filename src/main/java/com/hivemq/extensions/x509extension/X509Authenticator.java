@@ -38,6 +38,8 @@ public class X509Authenticator implements SimpleAuthenticator {
         if ("alwaystrustme".equals(certificate.getIssuerDN().getName())) {
             log.info("Issuer was alwaystrustme, client is allowed to use all topics with all permissions");
             output.authenticateSuccessfully();
+        } else {
+            log.info("Issuer is: " + certificate.getIssuerDN().getName());
         }
 
         output.nextExtensionOrDefault();

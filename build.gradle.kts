@@ -5,17 +5,17 @@ plugins {
 }
 
 group = "com.hivemq.extensions"
-description = "HiveMQ 4 Hello World Extension - a simple reference for all extension developers"
+description = "HiveMQ 4 Hello x509 Extension - a simple reference for all extension developers"
 dependencies {
     implementation("org.jetbrains:annotations:24.0.0")
 }
 
 hivemqExtension {
-    name = "Hello World Extension"
+    name = "Hello x509 Extension"
     author = "HiveMQ"
     priority = 1000
     startPriority = 1000
-    mainClass = "$group.helloworld.HelloWorldMain"
+    mainClass = "$group.x509extension.X509Main"
     sdkVersion = "$version"
 
     resources {
