@@ -1,21 +1,46 @@
 
 
-= HiveMQ 4 –    Example x509 Auth Extension
-
-
+= HiveMQ 4 – Example x509 Auth Extension
 
 == Purpose
 
-The MQTT client should provide x509 certificate
-The **Issuer** of the certificate should be `alwaystrustme`, then the client is authorized
-If the Issuer is something else, the x509-extension does not authorize the client and forward the authentication flow to the next or defualt Authenticator.
+This HiveMQ extension authenticates MQTT clients using x509 certificates. The extension checks the **Issuer** of the provided client certificate:
 
+- If the **Issuer** is `alwaystrustme`, the client is fully authorized and can access all topics with all permissions.
+- If the **Issuer** is anything else, the x509-extension does not authorize the client and forwards the authentication flow to the next or default authenticator.
 
 
 == Installation
 
-. Clone this repository into a Java 11 Gradle project.
+=== Download the release .zip file
+```bash
+wget https://github.com/guinp1n/x509-extension/releases/download/initial/x509-extension-4.32.0.zip
+```
+
+=== Unzip the downloaded file to the extensions directory
+```bash
+unzip -o x509-extension-4.32.0.zip -d $HIVEMQ_HOME/extensions
+```
+The result directory should look like:
+```text
+$HIVEMQ_HOME/extensions/x509-extension
+├── LICENSE
+├── hivemq-extension.xml
+└── x509-extension-4.32.0.jar
+```
+
+== How to Build from code
+
+. Clone this repository. It will result in a Java 11 Gradle project.
+```bash
+git clone https://github.com/guinp1n/x509-extension
+cd x509-extension
+```
+
 . Execute the Gradle task `hivemqExtensionZip` to build the extension.
+```bash
+./gradlew clean hivemqExtensionZip
+```
 . Move the file: `build/hivemq-extension/x509-extension-4.32.0.zip` to the directory: `HIVEMQ_HOME/extensions`
 . Unzip the file.
 . Start HiveMQ.
